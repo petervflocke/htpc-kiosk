@@ -1,0 +1,174 @@
+body, html {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center; /* centers horizontally */
+  align-items: center;     /* centers vertically */
+  flex-direction: column;
+}
+
+.container {
+  width: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+body {
+  background-color: #666666;
+}
+
+img.big {
+  width: 100px;
+  height: 100px;
+  margin: 5px;
+  transition: transform 0.2s ease-in-out;
+}
+
+img.small {
+  background-color: #ffffff;
+  margin: 2px;
+  width: 60px;
+  height: 60px;
+  border: 0px !important;
+}
+
+.table {
+  display: table;
+  border-collapse: separate;
+  border-spacing: 30px;
+}
+
+.table-row {
+  display: table-row;
+}
+
+.table-cell {
+  display: table-cell;
+  width: 120px;
+  height: 120px;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.table-cell:not(.nohover):hover {
+  box-shadow: 0px 0px 50px #999999;
+}
+
+#title {
+  color: white;
+  background: #aaaaaa;
+  width: 120px;
+}
+
+div.img {
+  width: auto;
+  float: left;
+  text-align: center;
+}
+
+div.img img {
+  display: inline;
+  border: 10px solid #ffffff;
+}
+
+div.img a:hover img {
+  background: #999999;
+}
+
+div.desc {
+  font-size: 12px;
+  font-family: "Arial";
+  text-align: center;
+  font-weight: normal;
+  margin: 1px;
+}
+
+div.main {
+  clear: left;
+  display: flex;
+  position: relative;
+  font-size: 16px;
+  font-family: "Arial";
+  color: #aaa;
+  justify-content: center;
+  align-items: center;
+}
+
+a:link {
+  text-decoration: none;
+}
+
+a:focus {
+  outline: none;
+}
+
+a:hover, a:focus {
+  background-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
+  border-radius: 8px;
+  transform: scale(1.05);
+  transition: box-shadow 0.2s, background-color 0.2s, transform 0.2s;
+}
+
+a {
+  border: none;
+  text-decoration: none;
+  display: inline-block;
+  padding: 8px;
+}
+
+#sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 24px;
+  padding: 32px 24px;
+  background: rgba(0,0,0,0.1); /* Optional: subtle sidebar background */
+  z-index: 1000;
+  pointer-events: none; /* So clicks pass through unless on a box */
+}
+
+.sidebar-box {
+  background: rgba(0,0,0,0.7);
+  border-radius: 14px;
+  padding: 18px 22px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+  color: #fff;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  min-width: 220px;
+  pointer-events: auto; /* Allow interaction inside the box */
+}
+
+#clock-time {
+  font-size: 2.2em;
+  font-weight: bold;
+  text-align: right;
+  letter-spacing: 2px;
+}
+#clock-date {
+  font-size: 1.1em;
+  color: #aaf;
+  text-align: right;
+  margin-top: 4px;
+}
+#geo-title {
+  text-align: right;
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-bottom: 6px;
+  color: #aaf;
+}
+#geo-details {
+  text-align: right;
+  font-size: 1em;
+  color: #fff;
+  word-break: break-word;
+}

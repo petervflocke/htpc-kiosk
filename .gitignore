@@ -1,0 +1,34 @@
+# Node modules
+node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build output
+dist/
+build/
+out/
+
+# Electron cache
+.cache/
+electron-out/
+
+# VSCode settings
+.vscode/
+
+# Environment files
+.env
+.env.*
+
+# Misc
+*.log
+*.tmp
+*.swp
+user_data/
