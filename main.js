@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, session } = require('electron');
+const { app, BrowserWindow, ipcMain, session, dialog } = require('electron');
 const path = require('path');
 const { exec } = require('child_process');
 
@@ -94,7 +94,7 @@ app.whenReady().then(() => {
 });
 
 // Add handler for system commands (sleep, shutdown, kodi, etc.)
-ipcMain.on('system-command', (event, cmd) => {
+ipcMain.on('system-command', async (event, cmd) => {
   console.log(`IPC message received: system-command, cmd: ${cmd}`);
   if (cmd === 'sleep') {
     exec('"C:\\PsTools\\psshutdown.exe" -d -t 0', (error, stdout, stderr) => {
@@ -112,6 +112,20 @@ ipcMain.on('system-command', (event, cmd) => {
       }
       console.log('Shutdown command executed successfully.', stdout);
     });
+  } else if (cmd === 'reboot') {
+    // Custom HTPC dialog
+    const result = await showCustomDialog({
+      title: 'Reboot',
+      message: 'Are you sure you want to close the application (reboot action)?',
+      okText: 'OK',
+      cancelText: 'Cancel'
+    });
+    if (result === 'ok') {
+      console.log('Gracefully closing the application due to reboot command.');
+      app.quit();
+    } else {
+      console.log('Reboot action cancelled by user.');
+    }
   } else if (cmd === 'kodi') {
     exec('"C:\\Program Files\\Kodi\\kodi.exe"', (error, stdout, stderr) => {
       if (error) {
@@ -128,3 +142,31 @@ ipcMain.on('system-command', (event, cmd) => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
+
+async function showCustomDialog(options) {
+  return new Promise((resolve) => {
+    const modal = new BrowserWindow({
+      parent: mainWindow,
+      modal: true,
+      width: 800, // was 600
+      height: 300,
+      frame: false,
+      alwaysOnTop: true,
+      resizable: false,
+      webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: false,
+      }
+    });
+    modal.loadFile(path.join(__dirname, 'dialog.html'));
+    // Pass options to the dialog window
+    modal.webContents.once('did-finish-load', () => {
+      modal.webContents.send('dialog-options', options);
+    });
+    // Listen for the user's choice
+    ipcMain.once('dialog-response', (event, response) => {
+      resolve(response);
+      modal.close();
+    });
+  });
+}

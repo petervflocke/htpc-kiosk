@@ -1,10 +1,10 @@
 const MATRIX = [
   { icon: 'icons/netflix2.png', label: '', type: 'link', action: 'https://www.netflix.com/' },
-  { icon: 'icons/hbo-max.png', label: '', type: 'link', action: 'https://duckduckgo.com/' },
+  { icon: 'icons/hbo-max.png', label: '', type: 'link', action: 'https://www.hbomax.com/pl/pl' },
 
-  { icon: 'icons/plus1.png', label: '', type: 'link', action: 'http://www.linguee.com/english-german/search' },
-  { icon: 'icons/player31.png', label: '', type: 'link', action: 'https://feedly.com/i/my' }, 
-  { icon: 'icons/amazon1.png', label: '', type: 'link', action: 'http://de.pons.com/?l=depl' },
+  { icon: 'icons/plus1.png', label: '', type: 'link', action: 'https://canalplus.com/pl/?refreshRights=true' },
+  { icon: 'icons/player31.png', label: '', type: 'link', action: 'https://player.pl' }, 
+  { icon: 'icons/amazon1.png', label: '', type: 'link', action: 'https://www.amazon.pl/gp/browse.html?node=98208905031&ref_=nav_cs_PLdisco' },
   { icon: 'icons/kodi21.png', label: '', type: 'command', action: 'kodi' },
 
   { icon: '', label: '', type: 'link', action: '' },
