@@ -3,7 +3,6 @@ const path = require('path');
 const { exec } = require('child_process');
 const os = require('os');
 const fs = require('fs');
-const { execSync } = require('child_process');
 const sudo = require('sudo-prompt');
 
 let mainWindow;
@@ -86,6 +85,7 @@ app.whenReady().then(() => {
       // When returning to main window, refresh geolocation
       if (mainWindow) {
         mainWindow.webContents.send('refresh-geolocation');
+        mainWindow.webContents.send('refresh-sidebar');
       }
     });
   });
@@ -220,6 +220,7 @@ ipcMain.on('system-command', async (event, cmd) => {
       toggleVPN(nextMode, (status, output) => {
         if (status === 'ok') {
           mainWindow.webContents.send('refresh-geolocation');
+          mainWindow.webContents.send('refresh-sidebar');
           showCustomDialog({
             title: 'VPN',
             message: `VPN switched ${nextMode.toUpperCase()} successfully.`,
@@ -286,7 +287,7 @@ async function showCustomDialog(options) {
   });
 }
 
-// System information handler
+// System information handler (async, non-blocking)
 ipcMain.handle('get-system-info', async () => {
   // Uptime
   const uptimeSec = process.uptime();
@@ -297,44 +298,64 @@ ipcMain.handle('get-system-info', async () => {
   const totalMem = os.totalmem();
   const freeMem = os.freemem();
 
-  // Disk (C: drive, Windows only)
-  let diskTotal = 0, diskFree = 0;
-  try {
-    const output = execSync(`wmic logicaldisk where "DeviceID='C:'" get FreeSpace,Size /format:csv`).toString();
-    const lines = output.trim().split('\n');
-    // Find the first line with two large numbers (free, total)
-    const dataLine = lines.find(line => /\d+,\d+/.test(line));
-    if (dataLine) {
-      const [, free, total] = dataLine.trim().split(',');
-      diskFree = parseInt(free, 10);
-      diskTotal = parseInt(total, 10);
-    }
-  } catch (e) {
-    console.error('WMIC failed:', e.message);
-  }
+  // Network (async)
+  const interfaces = os.networkInterfaces();
+  const ip = Object.values(interfaces).flat().find(i => i.family === 'IPv4' && !i.internal)?.address || 'N/A';
+
+  // Gateway (async PowerShell)
+  const gateway = await new Promise(resolve => {
+    exec(`powershell -Command "(Get-NetIPConfiguration | Where-Object { $_.IPv4DefaultGateway -ne $null }).IPv4DefaultGateway.NextHop"`, (err, stdout) => {
+      resolve(err ? 'N/A' : stdout.trim() || 'N/A');
+    });
+  });
+
+  // Disk (async WMIC)
+  const diskInfo = await new Promise(resolve => {
+    exec(`wmic logicaldisk where "DeviceID='C:'" get FreeSpace,Size /format:csv`, (err, stdout) => {
+      if (err) return resolve({ diskTotal: 0, diskFree: 0 });
+      const lines = stdout.trim().split('\n');
+      const dataLine = lines.find(line => /\d+,\d+/.test(line));
+      if (dataLine) {
+        const [, free, total] = dataLine.trim().split(',');
+        resolve({ diskTotal: parseInt(total, 10), diskFree: parseInt(free, 10) });
+      } else {
+        resolve({ diskTotal: 0, diskFree: 0 });
+      }
+    });
+  });
 
   return {
+    ip,
+    gateway,
     uptime: `${uptimeH}h ${uptimeM}m`,
     mem: `${Math.round((totalMem - freeMem) / 1024 / 1024)} / ${Math.round(totalMem / 1024 / 1024)} MB`,
-    disk: diskTotal && diskFree
-      ? `${Math.round((diskTotal - diskFree) / 1024 / 1024 / 1024)} / ${Math.round(diskTotal / 1024 / 1024 / 1024)} GB`
+    disk: diskInfo.diskTotal && diskInfo.diskFree
+      ? `${Math.round((diskInfo.diskTotal - diskInfo.diskFree) / 1024 / 1024 / 1024)} / ${Math.round(diskInfo.diskTotal / 1024 / 1024 / 1024)} GB`
       : 'N/A'
   };
 });
 
-// Extended system information handler
+// Extended system information handler (async, non-blocking)
 ipcMain.handle('get-full-info', async () => {
   // Network info
   const interfaces = os.networkInterfaces();
-  let ip = '', gw = '', dns = '';
-  try {
-    const { execSync } = require('child_process');
-    ip = Object.values(interfaces).flat().find(i => i.family === 'IPv4' && !i.internal)?.address || 'N/A';
-    gw = execSync(`powershell -Command "(Get-NetIPConfiguration | Where-Object { $_.IPv4DefaultGateway -ne $null }).IPv4DefaultGateway.NextHop"`).toString().trim() || 'N/A';
-    dns = execSync(`powershell -Command "(Get-DnsClientServerAddress -AddressFamily IPv4 | Select-Object -ExpandProperty ServerAddresses)"`).toString().trim() || 'N/A';
-  } catch (e) { /* ignore */ }
+  let ip = Object.values(interfaces).flat().find(i => i.family === 'IPv4' && !i.internal)?.address || 'N/A';
 
-  // Geolocation
+  // Gateway (async)
+  const gw = await new Promise(resolve => {
+    exec(`powershell -Command "(Get-NetIPConfiguration | Where-Object { $_.IPv4DefaultGateway -ne $null }).IPv4DefaultGateway.NextHop"`, (err, stdout) => {
+      resolve(err ? 'N/A' : stdout.trim() || 'N/A');
+    });
+  });
+
+  // DNS (async)
+  const dns = await new Promise(resolve => {
+    exec(`powershell -Command "(Get-DnsClientServerAddress -AddressFamily IPv4 | Select-Object -ExpandProperty ServerAddresses)"`, (err, stdout) => {
+      resolve(err ? 'N/A' : stdout.trim() || 'N/A');
+    });
+  });
+
+  // Geolocation (async)
   let geo = '';
   try {
     const res = await fetch('https://ipwhois.app/json/');
@@ -345,17 +366,21 @@ ipcMain.handle('get-full-info', async () => {
   // System info
   const totalMem = os.totalmem();
   const freeMem = os.freemem();
-  let diskTotal = 0, diskFree = 0;
-  try {
-    const output = execSync(`wmic logicaldisk where "DeviceID='C:'" get FreeSpace,Size /format:csv`).toString();
-    const lines = output.trim().split('\n');
-    const dataLine = lines.find(line => /\d+,\d+/.test(line));
-    if (dataLine) {
-      const [, free, total] = dataLine.trim().split(',');
-      diskFree = parseInt(free, 10);
-      diskTotal = parseInt(total, 10);
-    }
-  } catch (e) {}
+
+  // Disk (async WMIC)
+  const diskInfo = await new Promise(resolve => {
+    exec(`wmic logicaldisk where "DeviceID='C:'" get FreeSpace,Size /format:csv`, (err, stdout) => {
+      if (err) return resolve({ diskTotal: 0, diskFree: 0 });
+      const lines = stdout.trim().split('\n');
+      const dataLine = lines.find(line => /\d+,\d+/.test(line));
+      if (dataLine) {
+        const [, free, total] = dataLine.trim().split(',');
+        resolve({ diskTotal: parseInt(total, 10), diskFree: parseInt(free, 10) });
+      } else {
+        resolve({ diskTotal: 0, diskFree: 0 });
+      }
+    });
+  });
 
   return [
     `IP Address:      ${ip}`,
@@ -364,8 +389,8 @@ ipcMain.handle('get-full-info', async () => {
     `Geolocation:     ${geo}`,
     `Memory (used):   ${Math.round((totalMem - freeMem) / 1024 / 1024)} MB`,
     `Memory (total):  ${Math.round(totalMem / 1024 / 1024)} MB`,
-    `Disk (used):     ${diskTotal && diskFree ? Math.round((diskTotal - diskFree) / 1024 / 1024 / 1024) : 'N/A'} GB`,
-    `Disk (total):    ${diskTotal ? Math.round(diskTotal / 1024 / 1024 / 1024) : 'N/A'} GB`
+    `Disk (used):     ${diskInfo.diskTotal && diskInfo.diskFree ? Math.round((diskInfo.diskTotal - diskInfo.diskFree) / 1024 / 1024 / 1024) : 'N/A'} GB`,
+    `Disk (total):    ${diskInfo.diskTotal ? Math.round(diskInfo.diskTotal / 1024 / 1024 / 1024) : 'N/A'} GB`
   ].join('\n');
 });
 

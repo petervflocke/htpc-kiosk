@@ -104,6 +104,23 @@ function updateFancyClock() {
   }
 }
 
+function fetchSystemInfo() {
+  const sysDetails = document.getElementById('sys-details');
+  if (!sysDetails || !window.electronAPI || !window.electronAPI.getSystemInfo) return;
+
+  window.electronAPI.getSystemInfo().then(info => {
+    sysDetails.innerHTML = `
+      <b>IP:</b> ${info.ip}<br>
+      <b>Gateway:</b> ${info.gateway}<br>
+      <b>Uptime:</b> ${info.uptime}<br>
+      <b>Memory:</b> ${info.mem}<br>
+      <b>Disk:</b> ${info.disk}
+    `;
+  }).catch(() => {
+    sysDetails.textContent = 'Unable to fetch system info.';
+  });
+}
+
 function fetchGeolocation() {
   const geoDetails = document.getElementById('geo-details');
   if (!geoDetails) return;
@@ -111,7 +128,6 @@ function fetchGeolocation() {
   fetch('https://ipwhois.app/json/')
     .then(res => res.json())
     .then(data => {
-      // Compose location string with flag
       geoDetails.innerHTML = `
         ${data.country_flag ? `<img style="vertical-align: baseline; width: 18px; height: 12px; margin-right: 8px; background:#F0F0F0; border-radius:2px;" src="${data.country_flag}" alt="${data.country} flag">` : ''}
         ${data.country ? data.country : ''}${data.city ? ' - ' + data.city : ''}
@@ -124,32 +140,27 @@ function fetchGeolocation() {
     });
 }
 
-function fetchSystemInfo() {
-  const sysDetails = document.getElementById('sys-details');
-  if (!sysDetails || !window.electronAPI || !window.electronAPI.getSystemInfo) return;
-
-  window.electronAPI.getSystemInfo().then(info => {
-    sysDetails.innerHTML = `
-      <b>Uptime:</b> ${info.uptime}<br>
-      <b>Memory:</b> ${info.mem}<br>
-      <b>Disk:</b> ${info.disk}
-    `;
-  }).catch(() => {
-    sysDetails.textContent = 'Unable to fetch system info.';
-  });
+function refreshSidebarWidgets() {
+  fetchGeolocation();
+  fetchSystemInfo();
 }
 
 window.addEventListener('DOMContentLoaded', () => {
   updateFancyClock();
   setInterval(updateFancyClock, 60000);
 
-  fetchGeolocation();
-  fetchSystemInfo();
-  setInterval(fetchSystemInfo, 60000); // update system info every minute
-  setInterval(fetchGeolocation, 600000); // update geolocation every 10 minutes
+  refreshSidebarWidgets();
+  setInterval(refreshSidebarWidgets, 600000); // every 10 minutes
 });
 
-// Listen for refresh-geolocation event from main process
+if (window.electronAPI && window.electronAPI.onRefreshSidebar) {
+  window.electronAPI.onRefreshSidebar(() => refreshSidebarWidgets());
+}
+
 if (window.electronAPI && window.electronAPI.onRefreshGeolocation) {
   window.electronAPI.onRefreshGeolocation(() => fetchGeolocation());
+}
+
+if (window.electronAPI && window.electronAPI.onRefreshSystemInfo) {
+  window.electronAPI.onRefreshSystemInfo(() => fetchSystemInfo());
 }
