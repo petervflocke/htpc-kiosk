@@ -15,9 +15,9 @@ const MATRIX = [
   { icon: '', label: '', type: 'link', action: '' },
 
   { icon: 'icons/sleep1.png', label: 'Sleep', type: 'command', action: 'sleep' },
-  { icon: 'icons/power1.png', label: 'Power', type: 'command', action: 'power' },
+  { icon: 'icons/power1.png', label: 'Power', type: 'command', action: 'shutdown' },
   { icon: 'icons/reboot1.png', label: 'Reboot', type: 'command', action: 'reboot' },
   { icon: 'icons/setup1.png', label: 'Config', type: 'command', action: 'setup' },
-  { icon: 'icons/vpn1.png', label: 'VPN', type: 'command', action: 'shutdown' },
+  { icon: 'icons/vpn1.png', label: 'VPN', type: 'command', action: 'VPN' },
   { icon: 'icons/info1.png', label: 'Info', type: 'command', action: 'info' }
 ];

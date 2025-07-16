@@ -124,9 +124,32 @@ function fetchGeolocation() {
     });
 }
 
+function fetchSystemInfo() {
+  const sysDetails = document.getElementById('sys-details');
+  if (!sysDetails || !window.electronAPI || !window.electronAPI.getSystemInfo) return;
+
+  window.electronAPI.getSystemInfo().then(info => {
+    sysDetails.innerHTML = `
+      <b>Uptime:</b> ${info.uptime}<br>
+      <b>Memory:</b> ${info.mem}<br>
+      <b>Disk:</b> ${info.disk}
+    `;
+  }).catch(() => {
+    sysDetails.textContent = 'Unable to fetch system info.';
+  });
+}
+
 window.addEventListener('DOMContentLoaded', () => {
   updateFancyClock();
   setInterval(updateFancyClock, 60000);
 
   fetchGeolocation();
+  fetchSystemInfo();
+  setInterval(fetchSystemInfo, 60000); // update system info every minute
+  setInterval(fetchGeolocation, 600000); // update geolocation every 10 minutes
 });
+
+// Listen for refresh-geolocation event from main process
+if (window.electronAPI && window.electronAPI.onRefreshGeolocation) {
+  window.electronAPI.onRefreshGeolocation(() => fetchGeolocation());
+}
