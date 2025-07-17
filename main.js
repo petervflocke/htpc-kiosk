@@ -195,8 +195,15 @@ ipcMain.on('system-command', async (event, cmd) => {
       console.log('Kodi launched successfully.', stdout);
     });
   } else if (cmd === 'VPN') {
+    // Show indicator while checking status
+    mainWindow.webContents.send('set-activity-indicator', { visible: true, text: 'Checking VPN...' });
+
     // Detect current status
     const status = await getVPNStatus();
+
+    // Hide indicator before  showing the confirmation dialog
+    mainWindow.webContents.send('set-activity-indicator', { visible: false });
+
     let nextMode, msg;
     if (status === 'on') {
       nextMode = 'off';
@@ -217,7 +224,13 @@ ipcMain.on('system-command', async (event, cmd) => {
     });
 
     if (result === 'ok' && nextMode) {
+      // Show indicator again for the toggle operation
+      mainWindow.webContents.send('set-activity-indicator', { visible: true, text: `Switching VPN ${nextMode. toUpperCase()}...` });
+
       toggleVPN(nextMode, (status, output) => {
+        // Hide indicator when toggle operation is complete
+        mainWindow.webContents.send('set-activity-indicator', { visible: false });
+
         if (status === 'ok') {
           mainWindow.webContents.send('refresh-geolocation');
           mainWindow.webContents.send('refresh-sidebar');

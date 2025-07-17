@@ -164,3 +164,18 @@ if (window.electronAPI && window.electronAPI.onRefreshGeolocation) {
 if (window.electronAPI && window.electronAPI.onRefreshSystemInfo) {
   window.electronAPI.onRefreshSystemInfo(() => fetchSystemInfo());
 }
+
+// Listen for activity indicator updates from the main process
+if (window.electronAPI && window.electronAPI.onSetActivityIndicator) {
+  const activityIndicator = document.getElementById('activity-indicator');
+  const activityDetails = document.getElementById('activity-details');
+
+  window.electronAPI.onSetActivityIndicator((event, options) => {
+    if (options && options.visible) {
+      activityDetails.textContent = options.text || 'Processing...';
+      activityIndicator.style.display = 'block';
+    } else {
+      activityIndicator.style.display = 'none';
+    }
+  });
+}

@@ -6,4 +6,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
   onRefreshGeolocation: (callback) => ipcRenderer.on('refresh-geolocation', callback),
   onRefreshSidebar: (callback) => ipcRenderer.on('refresh-sidebar', callback),
+  onSetActivityIndicator: (callback) => ipcRenderer.on('set-activity-indicator', callback),
 });

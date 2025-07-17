@@ -4,6 +4,23 @@
   <meta charset="UTF-8">
   <title>HTPC Kiosk</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    /* Style for the activity indicator text to give feedback */
+    #activity-details {
+      animation: flickerAnimation 1.5s infinite;
+      -webkit-animation: flickerAnimation 1.5s infinite;
+    }
+    @keyframes flickerAnimation {
+      0%   { opacity:1; }
+      50%  { opacity:0.4; }
+      100% { opacity:1; }
+    }
+    @-webkit-keyframes flickerAnimation {
+      0%   { opacity:1; }
+      50%  { opacity:0.4; }
+      100% { opacity:1; }
+    }
+  </style>
 </head>
 <body>
 
@@ -20,6 +37,11 @@
   <div id="sys-info" class="sidebar-box">
     <div id="sys-title">System</div>
     <div id="sys-details">Loading...</div>
+  </div>
+  <!-- This box will be shown/hidden dynamically from script.js -->
+  <div id="activity-indicator" class ="sidebar-box" style="display: none;">
+    <div id="activity-title">Status</div>
+    <div id="activity-details">Processing...</div>
   </div>
 </div>
 
