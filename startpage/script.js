@@ -110,12 +110,12 @@ function fetchSystemInfo() {
 
   window.electronAPI.getSystemInfo().then(info => {
     sysDetails.innerHTML = `
-      <b>IP:</b> ${info.ip}<br>
-      <b>Gateway:</b> ${info.gateway}<br>
       <b>Uptime:</b> ${info.uptime}<br>
       <b>Memory:</b> ${info.mem}<br>
-      <b>Disk:</b> ${info.disk}
-    `;
+      <b>Disk:</b> ${info.disk}<br>
+      <b>IP:</b> ${info.ip}<br>
+      <b>Gateway:</b> ${info.gateway}
+      `;
   }).catch(() => {
     sysDetails.textContent = 'Unable to fetch system info.';
   });
