@@ -319,7 +319,7 @@ function showInfoDialog() {
   const infoWin = new BrowserWindow({
     parent: mainWindow,
     width: 700,
-    height: 500,
+    height: 600,
     frame: false,
     alwaysOnTop: true,
     resizable: false,
@@ -357,11 +357,11 @@ ipcMain.handle('get-system-details', async () => {
   const networkInfo = await new Promise(resolve => {
     const scriptPath = path.join(__dirname, 'scripts', 'get-network-config.ps1');
     exec(`powershell.exe -ExecutionPolicy Bypass -File "${scriptPath}"`, (error, stdout) => {
-      if (error) return resolve({ ipAddress: 'N/A', gateway: 'N/A', dns: 'N/A' });
+      if (error) return resolve({ ipAddress: 'N/A', gateway: 'N/A', dns: 'N/A', adapterType: 'N/A' });
       try {
         resolve(JSON.parse(stdout));
       } catch (e) {
-        resolve({ ipAddress: 'N/A', gateway: 'N/A', dns: 'N/A' });
+        resolve({ ipAddress: 'N/A', gateway: 'N/A', dns: 'N/A', adapterType: 'N/A' });
       }
     });
   });
@@ -391,6 +391,7 @@ ipcMain.handle('get-system-details', async () => {
     ip: networkInfo.ipAddress || 'N/A',
     gateway: networkInfo.gateway || 'N/A',
     dns: networkInfo.dns || 'N/A',
+    adapterType: networkInfo.adapterType || 'N/A',
     uptime: `${uptimeH}h ${uptimeM}m`,
     memUsed: Math.round((totalMem - freeMem) / 1024 / 1024),
     memTotal: Math.round(totalMem / 1024 / 1024),
