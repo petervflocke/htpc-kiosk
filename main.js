@@ -297,8 +297,9 @@ async function showCustomDialog(options) {
       transparent: true, // <-- add this
       backgroundColor: '#00000000', // <-- add this
       webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: false,
+        preload: path.join(__dirname, 'dialog-preload.js'),
+        contextIsolation: true,
+        nodeIntegration: false,
       }
     });
     modal.loadFile(path.join(__dirname, 'startpage', 'dialog.html'));
@@ -433,8 +434,9 @@ function showInfoDialog() {
     transparent: false,
     backgroundColor: '#111',
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
+      preload: path.join(__dirname, 'info-preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
     }
   });
   infoWin.loadFile(path.join(__dirname, 'startpage', 'info.html'));

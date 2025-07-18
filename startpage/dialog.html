@@ -50,8 +50,7 @@
     <div class="dialog-buttons" id="dialog-buttons"></div>
   </div>
   <script>
-    const { ipcRenderer, remote } = require('electron');
-    ipcRenderer.on('dialog-options', (event, opts) => {
+    window.dialogAPI.onDialogOptions((opts) => {
       document.getElementById('dialog-title').textContent = opts.title || '';
       document.getElementById('dialog-message').textContent = opts.message || '';
 
@@ -63,7 +62,7 @@
         const okBtn = document.createElement('button');
         okBtn.id = 'ok-btn';
         okBtn.textContent = opts.okText;
-        okBtn.onclick = () => ipcRenderer.send('dialog-response', 'ok');
+        okBtn.onclick = () => window.dialogAPI.sendResponse('ok');
         btns.appendChild(okBtn);
         okBtn.focus();
       }
@@ -72,13 +71,13 @@
         const okBtn = document.createElement('button');
         okBtn.id = 'ok-btn';
         okBtn.textContent = opts.okText;
-        okBtn.onclick = () => ipcRenderer.send('dialog-response', 'ok');
+        okBtn.onclick = () => window.dialogAPI.sendResponse('ok');
         btns.appendChild(okBtn);
 
         const cancelBtn = document.createElement('button');
         cancelBtn.id = 'cancel-btn';
         cancelBtn.textContent = opts.cancelText;
-        cancelBtn.onclick = () => ipcRenderer.send('dialog-response', 'cancel');
+        cancelBtn.onclick = () => window.dialogAPI.sendResponse('cancel');
         btns.appendChild(cancelBtn);
 
         okBtn.focus();

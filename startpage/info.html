@@ -60,16 +60,14 @@
   </div>
   <button class="info-btn" id="close-btn">OK</button>
   <script>
-    const { ipcRenderer } = require('electron');
-
     // Request info from main process
-    ipcRenderer.invoke('get-full-info').then(info => {
+    window.infoAPI.getFullInfo().then(info => {
       document.getElementById('info-content').textContent = info;
-      ipcRenderer.send('set-activity-indicator', { visible: false });
+      window.infoAPI.setActivityIndicator({ visible: false });
     });
 
     document.getElementById('close-btn').onclick = () => {
-      ipcRenderer.send('info-close');
+      window.infoAPI.closeWindow();
     };
 
     // Allow Enter/Escape to close
