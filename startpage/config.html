@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Network Configuration</title>
+  <style>
+    body {
+      background: #111;
+      color: #0f0;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 1.2em;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .config-box {
+      background: #222;
+      border-radius: 12px;
+      padding: 32px 48px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 24px rgba(0,0,0,0.25);
+      min-width: 600px;
+      max-width: 800px;
+      text-align: left;
+    }
+    .config-title {
+      color: #0f0;
+      font-size: 1.5em;
+      margin-bottom: 24px;
+      font-weight: bold;
+      text-align: center;
+    }
+    .form-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .form-row label {
+      flex: 0 0 180px;
+      color: #0f0;
+    }
+    .form-row input {
+      flex: 1;
+      background: #111;
+      border: 1px solid #0f0;
+      color: #0f0;
+      font-family: inherit;
+      font-size: 1.1em;
+      padding: 8px 12px;
+      border-radius: 4px;
+    }
+    .form-row input:focus {
+      outline: none;
+      box-shadow: 0 0 8px #0f0;
+    }
+    .button-container {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-top: 12px;
+    }
+    .config-btn {
+      background: #222;
+      color: #0f0;
+      border: 2px solid #0f0;
+      border-radius: 8px;
+      font-size: 1.1em;
+      padding: 12px 32px;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .config-btn:hover, .config-btn:focus {
+      background: #0f0;
+      color: #222;
+      outline: none;
+    }
+    #status-message {
+      text-align: center;
+      margin-top: 16px;
+      color: #ff4; /* Yellow for status */
+    }
+  </style>
+</head>
+<body>
+  <div class="config-box">
+    <div class="config-title">Network Configuration</div>
+    <div id="config-form">
+      <input type="hidden" id="interfaceAlias">
+      <div class="form-row">
+        <label for="ipAddress">IP Address:</label>
+        <input type="text" id="ipAddress">
+      </div>
+      <div class="form-row">
+        <label for="prefixLength">Subnet Prefix:</label>
+        <input type="text" id="prefixLength" placeholder="e.g., 24">
+      </div>
+      <div class="form-row">
+        <label for="gateway">Gateway:</label>
+        <input type="text" id="gateway">
+      </div>
+      <div class="form-row">
+        <label for="dns">DNS Servers:</label>
+        <input type="text" id="dns" placeholder="e.g., 8.8.8.8,1.1.1.1">
+      </div>
+      <div id="status-message"></div>
+    </div>
+  </div>
+  <div class="button-container">
+    <button class="config-btn" id="submit-btn">Apply</button>
+    <button class="config-btn" id="default-btn">Default</button>
+    <button class="config-btn" id="close-btn">Cancel</button>
+  </div>
+
+  <script>
+    const ipAddressEl = document.getElementById('ipAddress');
+    const prefixLengthEl = document.getElementById('prefixLength');
+    const gatewayEl = document.getElementById('gateway');
+    const dnsEl = document.getElementById('dns');
+    const interfaceAliasEl = document.getElementById('interfaceAlias');
+    const statusMessageEl = document.getElementById('status-message');
+
+    const submitBtn = document.getElementById('submit-btn');
+    const defaultBtn = document.getElementById('default-btn');
+    const closeBtn = document.getElementById('close-btn');
+
+    function setStatus(message, isError = false) {
+      statusMessageEl.textContent = message;
+      statusMessageEl.style.color = isError ? '#f44' : '#ff4';
+    }
+
+    // 1. Load current settings on init
+    window.addEventListener('DOMContentLoaded', async () => {
+      setStatus('Loading current settings...');
+      try {
+        const config = await window.configAPI.getNetworkConfig();
+        ipAddressEl.value = config.ipAddress || '';
+        prefixLengthEl.value = config.prefixLength || '';
+        gatewayEl.value = config.gateway || '';
+        dnsEl.value = config.dns || '';
+        interfaceAliasEl.value = config.interfaceAlias || '';
+        setStatus('Current settings loaded.');
+      } catch (error) {
+        console.error('Error getting network config:', error);
+        setStatus(`Error: ${error.error || 'Could not load network settings.'}`, true);
+      }
+    });
+
+    // 2. Handle Apply button
+    submitBtn.addEventListener('click', async () => {
+      const config = {
+        interfaceAlias: interfaceAliasEl.value,
+        ipAddress: ipAddressEl.value,
+        prefixLength: prefixLengthEl.value,
+        gateway: gatewayEl.value,
+        dns: dnsEl.value,
+      };
+
+      if (!config.interfaceAlias) {
+        setStatus('Error: Network interface is unknown. Cannot apply settings.', true);
+        return;
+      }
+
+      setStatus('Applying settings... Administrator permission required.');
+      try {
+        const result = await window.configAPI.setNetworkConfig(config);
+        setStatus(result.message, false);
+        setTimeout(() => window.configAPI.closeWindow(), 2000);
+      } catch (error) {
+        console.error('Error setting network config:', error);
+        setStatus(`Error: ${error.error || 'Failed to apply settings.'}`, true);
+      }
+    });
+
+    // 3. Handle Default button (with corrected gateway)
+    defaultBtn.addEventListener('click', () => {
+      ipAddressEl.value = '192.168.8.6';
+      prefixLengthEl.value = '24';
+      gatewayEl.value = '192.168.8.1';
+      dnsEl.value = '8.8.8.8';
+      setStatus('Default settings loaded. Click Apply to save.');
+    });
+
+    // 4. Handle Cancel/Close button and Escape key
+    closeBtn.addEventListener('click', () => window.configAPI.closeWindow());
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeBtn.click();
+    });
+  </script>
+</body>
+</html>

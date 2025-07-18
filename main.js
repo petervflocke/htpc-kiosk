@@ -1,11 +1,14 @@
-const { app, BrowserWindow, ipcMain, session, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, session } = require('electron');
 const path = require('path');
-const { exec } = require('child_process');
+const { exec, execSync } = require('child_process');
 const os = require('os');
-const fs = require('fs');
 const sudo = require('sudo-prompt');
 
 let mainWindow;
+let configWindow = null; // To hold the reference to the config window
+
+// Define path for psshutdown for easier management
+const psshutdownPath = path.join(__dirname, 'tools', 'psshutdown.exe');
 
 // Set the userData path to "user_data" folder in the application directory
 const appFolderPath = path.join(__dirname, 'user_data');
@@ -101,7 +104,6 @@ app.whenReady().then(() => {
 // Helper: Get current gateway using PowerShell (Windows only)
 async function getCurrentGateway() {
   try {
-    const { execSync } = require('child_process');
     const output = execSync(`powershell -Command "(Get-NetIPConfiguration | Where-Object { $_.IPv4DefaultGateway -ne $null }).IPv4DefaultGateway.NextHop"`).toString().trim();
     if (output) return output;
   } catch (e) {
@@ -145,7 +147,7 @@ ipcMain.on('system-command', async (event, cmd) => {
       cancelText: 'Cancel'
     });
     if (result === 'ok') {
-      exec('"C:\\PsTools\\psshutdown.exe" -d -t 0', (error, stdout, stderr) => {
+      exec(`"${psshutdownPath}" -d -t 0`, (error, stdout, stderr) => {
         if (error) {
           console.error('Error executing sleep command:', error);
           return;
@@ -259,6 +261,9 @@ ipcMain.on('system-command', async (event, cmd) => {
     return;
   } else if (cmd === 'info') {
     showInfoDialog();
+  } else if (cmd === 'setup') {
+    mainWindow.webContents.send('set-activity-indicator', { visible: true, text: 'Loading Config...' });
+    showConfigDialog();
   } else {
     console.error('Unknown system command:', cmd);
   }
@@ -441,3 +446,89 @@ function showInfoDialog() {
     if (mainWindow) mainWindow.webContents.send('refresh-geolocation');
   });
 }
+
+function showConfigDialog() {
+  if (configWindow) {
+    configWindow.focus();
+    return;
+  }
+
+  configWindow = new BrowserWindow({
+    width: 850,
+    height: 600,
+    modal: true,
+    parent: mainWindow,
+    frame: false,
+    transparent: true,
+    show: false,
+    webPreferences: {
+      // Use the dedicated, secure preload script for this window
+      preload: path.join(__dirname, 'config-preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    }
+  });
+
+  configWindow.loadFile(path.join(__dirname, 'startpage/config.html'));
+
+  configWindow.once('ready-to-show', () => {
+    configWindow.show();
+    mainWindow.webContents.send('set-activity-indicator', { visible: false });
+  });
+
+  configWindow.on('closed', () => {
+    configWindow = null;
+    // Refresh sidebar in case network settings changed
+    mainWindow.webContents.send('refresh-sidebar');
+  });
+}
+
+// IPC handler to get current network configuration
+ipcMain.handle('get-network-config', async () => {
+  const scriptPath = path.join(__dirname, 'scripts', 'get-network-config.ps1');
+  return new Promise((resolve, reject) => {
+    exec(`powershell.exe -ExecutionPolicy Bypass -File "${scriptPath}"`, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`get-network-config exec error: ${error}`);
+        return reject({ error: `Script execution failed: ${error.message}` });
+      }
+      try {
+        const data = JSON.parse(stdout);
+        if (data.error) {
+          console.error('Error from get-network-config.ps1:', data.error);
+          return reject({ error: data.error });
+        }
+        resolve(data);
+      } catch (e) {
+        console.error('Failed to parse JSON from get-network-config.ps1:', e, 'Raw stdout:', stdout);
+        reject({ error: 'Failed to parse network configuration.' });
+      }
+    });
+  });
+});
+
+// IPC handler to set network configuration with admin rights
+ipcMain.handle('set-network-config', async (event, config) => {
+  const scriptPath = path.join(__dirname, 'scripts', 'set-network-config.ps1');
+  const command = `powershell.exe -ExecutionPolicy Bypass -File "${scriptPath}" -InterfaceAlias "${config.interfaceAlias}" -IPAddress "${config.ipAddress}" -PrefixLength ${config.prefixLength} -Gateway "${config.gateway}" -DNS "${config.dns}"`;
+
+  const sudoOptions = {
+    name: 'HTPC Kiosk Network Setup',
+  };
+
+  return new Promise((resolve, reject) => {
+    sudo.exec(command, sudoOptions, (error, stdout, stderr) => {
+      if (error || stderr) {
+        const errorMessage = (error ? error.message : stderr).trim();
+        console.error(`sudo-prompt error: ${errorMessage}`);
+        return reject({ error: `Failed to apply settings: ${errorMessage}` });
+      }
+      resolve({ success: true, message: 'Network settings applied successfully.' });
+    });
+  });
+});
+
+// IPC handler to close the config window from the renderer
+ipcMain.on('config-close', () => {
+  if (configWindow) configWindow.close();
+});
