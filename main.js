@@ -313,114 +313,6 @@ async function showCustomDialog(options) {
   });
 }
 
-// System information handler (async, non-blocking)
-ipcMain.handle('get-system-info', async () => {
-  
-  // Uptime
-  const uptimeSec = process.uptime();
-  const uptimeH = Math.floor(uptimeSec / 3600);
-  const uptimeM = Math.floor((uptimeSec % 3600) / 60);
-
-  // Memory
-  const totalMem = os.totalmem();
-  const freeMem = os.freemem();
-
-  // Network (async)
-  const interfaces = os.networkInterfaces();
-  const ip = Object.values(interfaces).flat().find(i => i.family === 'IPv4' && !i.internal)?.address || 'N/A';
-
-  // Gateway (async PowerShell)
-  const gateway = await new Promise(resolve => {
-    exec(`powershell -Command "(Get-NetIPConfiguration | Where-Object { $_.IPv4DefaultGateway -ne $null }).IPv4DefaultGateway.NextHop"`, (err, stdout) => {
-      resolve(err ? 'N/A' : stdout.trim() || 'N/A');
-    });
-  });
-
-  // Disk (async WMIC)
-  const diskInfo = await new Promise(resolve => {
-    exec(`wmic logicaldisk where "DeviceID='C:'" get FreeSpace,Size /format:csv`, (err, stdout) => {
-      if (err) return resolve({ diskTotal: 0, diskFree: 0 });
-      const lines = stdout.trim().split('\n');
-      const dataLine = lines.find(line => /\d+,\d+/.test(line));
-      if (dataLine) {
-        const [, free, total] = dataLine.trim().split(',');
-        resolve({ diskTotal: parseInt(total, 10), diskFree: parseInt(free, 10) });
-      } else {
-        resolve({ diskTotal: 0, diskFree: 0 });
-      }
-    });
-  });
-
-  return {
-    ip,
-    gateway,
-    uptime: `${uptimeH}h ${uptimeM}m`,
-    mem: `${Math.round((totalMem - freeMem) / 1024 / 1024)} / ${Math.round(totalMem / 1024 / 1024)} MB`,
-    disk: diskInfo.diskTotal && diskInfo.diskFree
-      ? `${Math.round((diskInfo.diskTotal - diskInfo.diskFree) / 1024 / 1024 / 1024)} / ${Math.round(diskInfo.diskTotal / 1024 / 1024 / 1024)} GB`
-      : 'N/A'
-  };
-});
-
-// Extended system information handler (async, non-blocking)
-ipcMain.handle('get-full-info', async () => {
-  // Network info
-  const interfaces = os.networkInterfaces();
-  let ip = Object.values(interfaces).flat().find(i => i.family === 'IPv4' && !i.internal)?.address || 'N/A';
-
-  // Gateway (async)
-  const gw = await new Promise(resolve => {
-    exec(`powershell -Command "(Get-NetIPConfiguration | Where-Object { $_.IPv4DefaultGateway -ne $null }).IPv4DefaultGateway.NextHop"`, (err, stdout) => {
-      resolve(err ? 'N/A' : stdout.trim() || 'N/A');
-    });
-  });
-
-  // DNS (async)
-  const dns = await new Promise(resolve => {
-    exec(`powershell -Command "(Get-DnsClientServerAddress -AddressFamily IPv4 | Select-Object -ExpandProperty ServerAddresses)"`, (err, stdout) => {
-      resolve(err ? 'N/A' : stdout.trim() || 'N/A');
-    });
-  });
-
-  // Geolocation (async)
-  let geo = '';
-  try {
-    const res = await fetch('https://ipwhois.app/json/');
-    const data = await res.json();
-    geo = `${data.country || ''} ${data.city || ''} (IP: ${data.ip || ''})`;
-  } catch (e) { geo = 'N/A'; }
-
-  // System info
-  const totalMem = os.totalmem();
-  const freeMem = os.freemem();
-
-  // Disk (async WMIC)
-  const diskInfo = await new Promise(resolve => {
-    exec(`wmic logicaldisk where "DeviceID='C:'" get FreeSpace,Size /format:csv`, (err, stdout) => {
-      if (err) return resolve({ diskTotal: 0, diskFree: 0 });
-      const lines = stdout.trim().split('\n');
-      const dataLine = lines.find(line => /\d+,\d+/.test(line));
-      if (dataLine) {
-        const [, free, total] = dataLine.trim().split(',');
-        resolve({ diskTotal: parseInt(total, 10), diskFree: parseInt(free, 10) });
-      } else {
-        resolve({ diskTotal: 0, diskFree: 0 });
-      }
-    });
-  });
-
-  return [
-    `IP Address:      ${ip}`,
-    `Gateway:         ${gw}`,
-    `DNS:             ${dns}`,
-    `Geolocation:     ${geo}`,
-    `Memory (used):   ${Math.round((totalMem - freeMem) / 1024 / 1024)} MB`,
-    `Memory (total):  ${Math.round(totalMem / 1024 / 1024)} MB`,
-    `Disk (used):     ${diskInfo.diskTotal && diskInfo.diskFree ? Math.round((diskInfo.diskTotal - diskInfo.diskFree) / 1024 / 1024 / 1024) : 'N/A'} GB`,
-    `Disk (total):    ${diskInfo.diskTotal ? Math.round(diskInfo.diskTotal / 1024 / 1024 / 1024) : 'N/A'} GB`
-  ].join('\n');
-});
-
 // Show information dialog
 function showInfoDialog() {
   mainWindow.webContents.send('set-activity-indicator', { visible: true, text: 'Fetching system info...' });
@@ -449,6 +341,69 @@ function showInfoDialog() {
   });
 }
 
+/**
+ * Unified handler to get all system details efficiently.
+ * This replaces get-system-info and get-full-info.
+ */
+ipcMain.handle('get-system-details', async () => {
+  // 1. Get Uptime and Memory from Node.js os module (fast)
+  const uptimeSec = process.uptime();
+  const uptimeH = Math.floor(uptimeSec / 3600);
+  const uptimeM = Math.floor((uptimeSec % 3600) / 60);
+  const totalMem = os.totalmem();
+  const freeMem = os.freemem();
+
+  // 2. Get all network info with one efficient PowerShell script
+  const networkInfo = await new Promise(resolve => {
+    const scriptPath = path.join(__dirname, 'scripts', 'get-network-config.ps1');
+    exec(`powershell.exe -ExecutionPolicy Bypass -File "${scriptPath}"`, (error, stdout) => {
+      if (error) return resolve({ ipAddress: 'N/A', gateway: 'N/A', dns: 'N/A' });
+      try {
+        resolve(JSON.parse(stdout));
+      } catch (e) {
+        resolve({ ipAddress: 'N/A', gateway: 'N/A', dns: 'N/A' });
+      }
+    });
+  });
+
+  // 3. Get Geolocation from external API
+  const geoInfo = await fetch('https://ipwhois.app/json/')
+    .then(res => res.json())
+    .catch(() => ({ country: 'N/A', city: '', ip: 'N/A' }));
+
+  // 4. Get Disk info with one WMIC call
+  const diskInfo = await new Promise(resolve => {
+    exec(`wmic logicaldisk where "DeviceID='C:'" get FreeSpace,Size /format:csv`, (err, stdout) => {
+      if (err) return resolve({ total: 0, free: 0 });
+      const lines = stdout.trim().split('\n');
+      const dataLine = lines.find(line => /\d+,\d+/.test(line));
+      if (dataLine) {
+        const [, free, total] = dataLine.trim().split(',');
+        resolve({ total: parseInt(total, 10), free: parseInt(free, 10) });
+      } else {
+        resolve({ total: 0, free: 0 });
+      }
+    });
+  });
+
+  // 5. Construct and return the final JSON object
+  return {
+    ip: networkInfo.ipAddress || 'N/A',
+    gateway: networkInfo.gateway || 'N/A',
+    dns: networkInfo.dns || 'N/A',
+    uptime: `${uptimeH}h ${uptimeM}m`,
+    memUsed: Math.round((totalMem - freeMem) / 1024 / 1024),
+    memTotal: Math.round(totalMem / 1024 / 1024),
+    diskUsed: diskInfo.total ? Math.round((diskInfo.total - diskInfo.free) / 1024 / 1024 / 1024) : 'N/A',
+    diskTotal: diskInfo.total ? Math.round(diskInfo.total / 1024 / 1024 / 1024) : 'N/A',
+    geo: {
+      country: geoInfo.country || 'N/A',
+      city: geoInfo.city || '',
+      ip: geoInfo.ip || 'N/A',
+    }
+  };
+});
+
 function showConfigDialog() {
   if (configWindow) {
     configWindow.focus();
@@ -475,7 +430,6 @@ function showConfigDialog() {
 
   configWindow.once('ready-to-show', () => {
     configWindow.show();
-    mainWindow.webContents.send('set-activity-indicator', { visible: false });
   });
 
   configWindow.on('closed', () => {

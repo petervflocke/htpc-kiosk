@@ -60,10 +60,23 @@
   </div>
   <button class="info-btn" id="close-btn">OK</button>
   <script>
-    // Request info from main process
-    window.infoAPI.getFullInfo().then(info => {
-      document.getElementById('info-content').textContent = info;
+    // Request details from main process and format them
+    window.infoAPI.getSystemDetails().then(details => {
+      const infoText = [
+        `IP Address:      ${details.ip}`,
+        `Gateway:         ${details.gateway}`,
+        `DNS:             ${details.dns}`,
+        `Geolocation:     ${details.geo.country} ${details.geo.city} (IP: ${details.geo.ip})`,
+        `Memory (used):   ${details.memUsed} MB`,
+        `Memory (total):  ${details.memTotal} MB`,
+        `Disk (used):     ${details.diskUsed} GB`,
+        `Disk (total):    ${details.diskTotal} GB`
+      ].join('\n');
+
+      document.getElementById('info-content').textContent = infoText;
       window.infoAPI.setActivityIndicator({ visible: false });
+    }).catch(err => {
+      document.getElementById('info-content').textContent = `Error loading details: ${err.message}`;
     });
 
     document.getElementById('close-btn').onclick = () => {

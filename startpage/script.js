@@ -106,15 +106,15 @@ function updateFancyClock() {
 
 function fetchSystemInfo() {
   const sysDetails = document.getElementById('sys-details');
-  if (!sysDetails || !window.electronAPI || !window.electronAPI.getSystemInfo) return;
+  if (!sysDetails || !window.electronAPI || !window.electronAPI.getSystemDetails) return;
 
-  window.electronAPI.getSystemInfo().then(info => {
+  window.electronAPI.getSystemDetails().then(details => {
     sysDetails.innerHTML = `
-      <b>Uptime:</b> ${info.uptime}<br>
-      <b>Memory:</b> ${info.mem}<br>
-      <b>Disk:</b> ${info.disk}<br>
-      <b>IP:</b> ${info.ip}<br>
-      <b>Gateway:</b> ${info.gateway}
+      <b>Uptime:</b> ${details.uptime}<br>
+      <b>Memory:</b> ${details.memUsed} / ${details.memTotal} MB<br>
+      <b>Disk:</b> ${details.diskUsed} / ${details.diskTotal} GB<br>
+      <b>IP:</b> ${details.ip}<br>
+      <b>Gateway:</b> ${details.gateway}
       `;
   }).catch(() => {
     sysDetails.textContent = 'Unable to fetch system info.';

@@ -78,6 +78,15 @@
       color: #222;
       outline: none;
     }
+    /* Style for disabled elements to provide clear visual feedback */
+    .form-row input:disabled, .config-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .config-btn:disabled:hover {
+      background: #222; /* Prevent hover effect on disabled buttons */
+      color: #0f0;
+    }
     #status-message {
       text-align: center;
       margin-top: 16px;
@@ -92,26 +101,26 @@
       <input type="hidden" id="interfaceAlias">
       <div class="form-row">
         <label for="ipAddress">IP Address:</label>
-        <input type="text" id="ipAddress">
+        <input type="text" id="ipAddress" placeholder="e.g., 192.168.1.100" disabled>
       </div>
       <div class="form-row">
         <label for="prefixLength">Subnet Prefix:</label>
-        <input type="text" id="prefixLength" placeholder="e.g., 24">
+        <input type="text" id="prefixLength" placeholder="e.g., 24" disabled>
       </div>
       <div class="form-row">
         <label for="gateway">Gateway:</label>
-        <input type="text" id="gateway">
+        <input type="text" id="gateway" placeholder="e.g., 192.168.1.1" disabled>
       </div>
       <div class="form-row">
         <label for="dns">DNS Servers:</label>
-        <input type="text" id="dns" placeholder="e.g., 8.8.8.8,1.1.1.1">
+        <input type="text" id="dns" placeholder="e.g., 8.8.8.8,1.1.1.1" disabled>
       </div>
-      <div id="status-message"></div>
+      <div id="status-message">Loading current settings...</div>
     </div>
   </div>
   <div class="button-container">
-    <button class="config-btn" id="submit-btn">Apply</button>
-    <button class="config-btn" id="default-btn">Default</button>
+    <button class="config-btn" id="submit-btn" disabled>Apply</button>
+    <button class="config-btn" id="default-btn" disabled>Default</button>
     <button class="config-btn" id="close-btn">Cancel</button>
   </div>
 
@@ -126,15 +135,22 @@
     const submitBtn = document.getElementById('submit-btn');
     const defaultBtn = document.getElementById('default-btn');
     const closeBtn = document.getElementById('close-btn');
+    const formElements = [ipAddressEl, prefixLengthEl, gatewayEl, dnsEl, submitBtn, defaultBtn];
 
     function setStatus(message, isError = false) {
       statusMessageEl.textContent = message;
       statusMessageEl.style.color = isError ? '#f44' : '#ff4';
     }
 
+    function setFormEnabled(enabled) {
+      formElements.forEach(el => {
+        el.disabled = !enabled;
+      });
+    }
+
     // 1. Load current settings on init
     window.addEventListener('DOMContentLoaded', async () => {
-      setStatus('Loading current settings...');
+      // The initial message is set in the HTML, but we can re-affirm it here.
       try {
         const config = await window.configAPI.getNetworkConfig();
         ipAddressEl.value = config.ipAddress || '';
@@ -146,6 +162,11 @@
       } catch (error) {
         console.error('Error getting network config:', error);
         setStatus(`Error: ${error.error || 'Could not load network settings.'}`, true);
+      } finally {
+        // Re-enable the form and hide the main window's activity indicator
+        // This ensures the form is usable even if loading fails.
+        setFormEnabled(true);
+        window.configAPI.setActivityIndicator({ visible: false });
       }
     });
 
