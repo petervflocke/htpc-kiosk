@@ -65,6 +65,7 @@
     // Request info from main process
     ipcRenderer.invoke('get-full-info').then(info => {
       document.getElementById('info-content').textContent = info;
+      ipcRenderer.send('set-activity-indicator', { visible: false });
     });
 
     document.getElementById('close-btn').onclick = () => {

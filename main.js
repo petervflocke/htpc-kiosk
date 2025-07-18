@@ -264,6 +264,13 @@ ipcMain.on('system-command', async (event, cmd) => {
   }
 });
 
+// Handler to relay activity indicator changes from any window to the main window
+ipcMain.on('set-activity-indicator', (event, options) => {
+  if (mainWindow) {
+    mainWindow.webContents.send('set-activity-indicator', options);
+  }
+});
+
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
@@ -302,6 +309,7 @@ async function showCustomDialog(options) {
 
 // System information handler (async, non-blocking)
 ipcMain.handle('get-system-info', async () => {
+  
   // Uptime
   const uptimeSec = process.uptime();
   const uptimeH = Math.floor(uptimeSec / 3600);
@@ -409,9 +417,9 @@ ipcMain.handle('get-full-info', async () => {
 
 // Show information dialog
 function showInfoDialog() {
+  mainWindow.webContents.send('set-activity-indicator', { visible: true, text: 'Fetching system info...' });
   const infoWin = new BrowserWindow({
     parent: mainWindow,
-    modal: true,
     width: 700,
     height: 500,
     frame: false,
@@ -425,7 +433,9 @@ function showInfoDialog() {
     }
   });
   infoWin.loadFile(path.join(__dirname, 'startpage', 'info.html'));
+
   ipcMain.once('info-close', () => {
+    mainWindow.webContents.send('set-activity-indicator', { visible: false });  
     infoWin.close();
     // Trigger geolocation refresh on main window
     if (mainWindow) mainWindow.webContents.send('refresh-geolocation');
