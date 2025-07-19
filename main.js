@@ -45,11 +45,14 @@ app.setPath('userData', userDataDir)
 const START_PAGE_URL = 'file://' + path.join(__dirname, 'startpage', 'index.html');
 
 function createWindow() {
+
+  const { screen } = require('electron');
+  const display = screen.getPrimaryDisplay();
+
   mainWindow = new BrowserWindow({
-    width: 1920,
-    height: 1080,
+    x: display.bounds.x,
+    y: display.bounds.y,
     fullscreen: true,
-    simpleFullscreen: true,
     frame: false,
     autoHideMenuBar: true,
     webPreferences: {
