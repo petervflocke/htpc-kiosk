@@ -1,5 +1,5 @@
 const COLS = 6; // Number of columns
-const ROWS = 5; // Number of rows
+const ROWS = 4; // Number of rows
 const CELL_SIZE = 120; // Must match CSS .table-cell width/height
 const SPACING = 30;    // Must match CSS .table border-spacing
 const SIDEBAR_WIDTH = 300; // Sidebar width defined in CSS
