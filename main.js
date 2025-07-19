@@ -3,6 +3,7 @@ const path = require('path');
 const { exec, execSync } = require('child_process');
 const os = require('os');
 const sudo = require('sudo-prompt');
+const fs = require('fs');
 
 let mainWindow;
 let configWindow = null; // To hold the reference to the config window
@@ -21,13 +22,14 @@ function getResourcePath(relativePath) {
 
 // Define path for psshutdown for easier management, using the resource helper.
 const psshutdownPath = getResourcePath('tools/psshutdown.exe');
+// Path to the matrix configuration JSON
+const matrixConfigPath = getResourcePath('config/matrix.json');
 
 // Set the userData path to "user_data" folder in the application directory
 // PP fix the userData location: const appFolderPath = path.join(__dirname, 'user_data');
 // PP old one: app.setPath('userData', appFolderPath);
 
 app.setPath('userData', 'C:\\HTPC\\htpc-kiosk\\user_data')
-const fs = require('fs')
 const userDataDir = 'C:\\HTPC\\htpc-kiosk\\user_data'
 
 if (!fs.existsSync(userDataDir)) {
@@ -546,6 +548,17 @@ ipcMain.handle('set-network-config', async (event, config) => {
       resolve({ success: true, message: 'Network settings applied successfully.' });
     });
   });
+});
+
+// IPC handler to load the matrix configuration JSON
+ipcMain.handle('load-matrix-config', async () => {
+  try {
+    const raw = fs.readFileSync(matrixConfigPath, 'utf8');
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error('Failed to load matrix config:', err);
+    return [];
+  }
 });
 
 // IPC handler to close the config window from the renderer
