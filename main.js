@@ -5,6 +5,9 @@ const os = require('os');
 const sudo = require('sudo-prompt');
 const fs = require('fs');
 
+// Check for the --clear-cache command line argument
+const shouldClearCache = process.argv.includes('--clear-cache');
+
 let mainWindow;
 let configWindow = null; // To hold the reference to the config window
 
@@ -95,9 +98,15 @@ function createWindow() {
   });
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  if (shouldClearCache) {
+    await session.defaultSession.clearCache();
+    console.log('Cache cleared successfully via --clear-cache flag.');
+  }
+
   createWindow();
-  console.log('Cookies and web data are saved in:', app.getPath('userData'));
+
+  // console.log('Cookies and web data are saved in:', app.getPath('userData'));
 
   // IPC handler: launch Microsoft Edge in kiosk mode for a given URL
   ipcMain.on('open-link-in-kiosk', (event, url) => {
