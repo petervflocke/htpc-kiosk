@@ -54,7 +54,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
           const img = document.createElement('img');
           img.className = 'big';
-          img.src = item.icon;
+          img.src = `../config/icons/${item.icon}`;
           img.alt = item.label;
 
           const titleDiv = document.createElement('div');
