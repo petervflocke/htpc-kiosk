@@ -61,6 +61,11 @@ function createWindow() {
         // Block Alt+F4 to prevent external closure
         event.preventDefault();
       }
+      else if (input.key === 'q' && input.control) {
+        // Quit application on Ctrl+Q
+        event.preventDefault();
+        app.quit();
+      }
     });
   });
 }
