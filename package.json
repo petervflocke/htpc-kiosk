@@ -29,8 +29,10 @@
       }
     ],
     "asarUnpack": [
-    "scripts",
-    "tools"
+      "scripts",
+      "tools",
+      "config",
+      "startpage/icons"
     ],
     "win": {
       "target": "nsis",

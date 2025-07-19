@@ -1,9 +1,16 @@
 const COLS = 6; // Number of columns
 const ROWS = 5; // Number of rows
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
   const container = document.getElementById('matrix');
   container.className = 'table'; // Ensure the container has the correct class
+
+  let matrix = [];
+  try {
+    matrix = await window.electronAPI.getMatrixConfig();
+  } catch (err) {
+    console.error('Failed to load matrix config', err);
+  }
 
   let idx = 0;
   for (let y = 0; y < ROWS; y++) {
@@ -14,8 +21,8 @@ window.addEventListener('DOMContentLoaded', () => {
       const cell = document.createElement('div');
       cell.className = 'table-cell';
 
-      if (idx < MATRIX.length) {
-        const item = MATRIX[idx];
+      if (idx < matrix.length) {
+        const item = matrix[idx];
 
         // Check if the item is empty
         if (item.icon || item.label || item.action) {
