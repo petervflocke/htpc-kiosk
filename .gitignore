@@ -10,6 +10,7 @@ pnpm-debug.log*
 # OS files
 .DS_Store
 Thumbs.db
+tools/
 
 # Build output
 dist/
@@ -19,6 +20,7 @@ out/
 # Electron cache
 .cache/
 electron-out/
+dist/
 
 # VSCode settings
 .vscode/

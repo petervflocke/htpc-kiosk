@@ -7,12 +7,35 @@ const sudo = require('sudo-prompt');
 let mainWindow;
 let configWindow = null; // To hold the reference to the config window
 
-// Define path for psshutdown for easier management
-const psshutdownPath = path.join(__dirname, 'tools', 'psshutdown.exe');
+// Helper to get the correct path to unpacked resources in development and production.
+// This function ensures that scripts are found whether the app is running from source
+// or from a packaged distribution (like win-unpacked), without hardcoding any paths.
+function getResourcePath(relativePath) {
+  if (app.isPackaged) {
+    // In a packaged app, unpacked files are in 'resources/app.asar.unpacked'
+    return path.join(process.resourcesPath, 'app.asar.unpacked', relativePath);
+  }
+  // In development, files are relative to the project root
+  return path.join(__dirname, relativePath);
+}
+
+// Define path for psshutdown for easier management, using the resource helper.
+const psshutdownPath = getResourcePath('tools/psshutdown.exe');
 
 // Set the userData path to "user_data" folder in the application directory
-const appFolderPath = path.join(__dirname, 'user_data');
-app.setPath('userData', appFolderPath);
+// PP fix the userData location: const appFolderPath = path.join(__dirname, 'user_data');
+// PP old one: app.setPath('userData', appFolderPath);
+
+app.setPath('userData', 'C:\\HTPC\\htpc-kiosk\\user_data')
+const fs = require('fs')
+const userDataDir = 'C:\\HTPC\\htpc-kiosk\\user_data'
+
+if (!fs.existsSync(userDataDir)) {
+  fs.mkdirSync(userDataDir, { recursive: true })
+}
+app.setPath('userData', userDataDir)
+
+
 
 const START_PAGE_URL = 'file://' + path.join(__dirname, 'startpage', 'index.html');
 
@@ -128,12 +151,41 @@ async function getVPNStatus() {
 
 // Helper: Toggle VPN
 function toggleVPN(targetMode, callback) {
-  const scriptPath = path.join(__dirname, 'scripts', 'vpn.ps1');
-  const script = `powershell.exe -ExecutionPolicy Bypass -File "${scriptPath}" ${targetMode}`;
-  sudo.exec(script, { name: 'HTPC VPN Switcher' }, (err, stdout, stderr) => {
-    if (err) {
-      console.error('VPN toggle error:', err);
-      callback && callback('error', err);
+  // Move VPN configurations from the PS1 script to here for easier management.
+  const vpnConfigs = {
+    on: {
+      ipAddress: "192.168.8.6",
+      prefixLength: 24,
+      gateway: "192.168.8.1",
+      dns: "8.8.8.8",
+      interfaceAlias: "Ethernet" // This could be made dynamic
+    },
+    off: {
+      ipAddress: "192.168.0.6",
+      prefixLength: 24,
+      gateway: "192.168.0.1",
+      dns: "8.8.8.8",
+      interfaceAlias: "Ethernet"
+    }
+  };
+
+  const config = vpnConfigs[targetMode];
+  if (!config) {
+    const err = new Error(`Invalid VPN mode: ${targetMode}`);
+    console.error('VPN toggle error:', err);
+    callback && callback('error', err);
+    return;
+  }
+
+  // Use the generic set-network-config.ps1 script
+  const scriptPath = getResourcePath('scripts/set-network-config.ps1');
+  const command = `powershell.exe -ExecutionPolicy Bypass -File "${scriptPath}" -InterfaceAlias "${config.interfaceAlias}" -IPAddress "${config.ipAddress}" -PrefixLength ${config.prefixLength} -Gateway "${config.gateway}" -DNS "${config.dns}"`;
+
+  sudo.exec(command, { name: 'HTPC VPN Switcher' }, (err, stdout, stderr) => {
+    if (err || stderr) {
+      const errorMessage = (err ? err.message : stderr).trim();
+      console.error('VPN toggle error:', errorMessage);
+      callback && callback('error', errorMessage);
     } else {
       console.log('VPN script output:', stdout);
       callback && callback('ok', stdout);
@@ -152,6 +204,7 @@ ipcMain.on('system-command', async (event, cmd) => {
       cancelText: 'Cancel'
     });
     if (result === 'ok') {
+      // Reverted to use psshutdown.exe for proper sleep functionality.
       exec(`"${psshutdownPath}" -d -t 0`, (error, stdout, stderr) => {
         if (error) {
           console.error('Error executing sleep command:', error);
@@ -365,7 +418,7 @@ ipcMain.handle('get-system-details', async () => {
 
   // 2. Get all network info with one efficient PowerShell script
   const networkInfo = await new Promise(resolve => {
-    const scriptPath = path.join(__dirname, 'scripts', 'get-network-config.ps1');
+    const scriptPath = getResourcePath('scripts/get-network-config.ps1');
     exec(`powershell.exe -ExecutionPolicy Bypass -File "${scriptPath}"`, (error, stdout) => {
       if (error) return resolve({ ipAddress: 'N/A', gateway: 'N/A', dns: 'N/A', adapterType: 'N/A' });
       try {
@@ -452,7 +505,7 @@ function showConfigDialog() {
 
 // IPC handler to get current network configuration
 ipcMain.handle('get-network-config', async () => {
-  const scriptPath = path.join(__dirname, 'scripts', 'get-network-config.ps1');
+  const scriptPath = getResourcePath('scripts/get-network-config.ps1');
   return new Promise((resolve, reject) => {
     exec(`powershell.exe -ExecutionPolicy Bypass -File "${scriptPath}"`, (error, stdout, stderr) => {
       if (error) {
@@ -476,7 +529,7 @@ ipcMain.handle('get-network-config', async () => {
 
 // IPC handler to set network configuration with admin rights
 ipcMain.handle('set-network-config', async (event, config) => {
-  const scriptPath = path.join(__dirname, 'scripts', 'set-network-config.ps1');
+  const scriptPath = getResourcePath('scripts/set-network-config.ps1');
   const command = `powershell.exe -ExecutionPolicy Bypass -File "${scriptPath}" -InterfaceAlias "${config.interfaceAlias}" -IPAddress "${config.ipAddress}" -PrefixLength ${config.prefixLength} -Gateway "${config.gateway}" -DNS "${config.dns}"`;
 
   const sudoOptions = {

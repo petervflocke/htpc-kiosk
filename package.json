@@ -3,13 +3,43 @@
   "version": "1.0.0",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dist": "electron-builder"
   },
   "devDependencies": {
-    "electron": "^30.0.0"
+    "electron": "^30.0.0",
+    "electron-builder": "^26.0.12"
   },
   "dependencies": {
     "default-gateway": "^7.2.2",
     "sudo-prompt": "^9.2.1"
+  },
+  "build": {
+    "appId": "com.htpc.kiosk",
+    "productName": "HTPC Kiosk",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      {
+        "from": "scripts",
+        "to": "scripts",
+        "filter": ["**/*.ps1"]
+      }
+    ],
+    "asarUnpack": [
+    "scripts",
+    "tools"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }
