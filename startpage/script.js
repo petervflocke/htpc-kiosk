@@ -1,5 +1,8 @@
 const COLS = 6; // Number of columns
 const ROWS = 5; // Number of rows
+const CELL_SIZE = 120; // Must match CSS .table-cell width/height
+const SPACING = 30;    // Must match CSS .table border-spacing
+const SIDEBAR_WIDTH = 300; // Sidebar width defined in CSS
 
 window.addEventListener('DOMContentLoaded', async () => {
   const container = document.getElementById('matrix');
@@ -77,7 +80,21 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Set initial focus
   const initial = document.getElementById('initial-focus');
   if (initial) initial.focus();
+
+  // scale the matrix after it has been built
+  scaleMatrix();
 });
+
+function scaleMatrix() {
+  const matrixWidth = COLS * CELL_SIZE + SPACING * (COLS + 1);
+  const matrixHeight = ROWS * CELL_SIZE + SPACING * (ROWS + 1);
+  const availableWidth = window.innerWidth - SIDEBAR_WIDTH;
+  const availableHeight = window.innerHeight;
+  const scale = Math.min(availableWidth / matrixWidth, availableHeight / matrixHeight, 1);
+  document.documentElement.style.setProperty('--matrix-scale', scale);
+}
+
+window.addEventListener('resize', scaleMatrix);
 
 // Keyboard navigation
 document.addEventListener('keydown', function (e) {

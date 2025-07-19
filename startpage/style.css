@@ -195,3 +195,22 @@ a {
   /* min-width: 400px; */
   /* max-width: 800px; */
 }
+
+/* Container for the application matrix */
+#matrix-container {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: calc(100vw - 300px); /* account for sidebar width */
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* Scale the matrix grid to fit the available space */
+#matrix {
+  transform-origin: top left;
+  transform: scale(var(--matrix-scale, 1));
+}
