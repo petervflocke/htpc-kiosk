@@ -188,8 +188,13 @@ ipcMain.on('system-command', async (event, cmd) => {
       cancelText: 'Cancel'
     });
     if (result === 'ok') {
-      console.log('Gracefully closing the application due to reboot command.');
-      app.quit();
+      exec('shutdown /r /t 0', (error, stdout, stderr) => {
+        if (error) {
+          console.error('Error executing reboot command:', error);
+          return;
+        }
+        console.log('Reboot command executed successfully.', stdout);
+      });
     } else {
       console.log('Reboot action cancelled by user.');
     }
