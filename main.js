@@ -49,7 +49,7 @@ function createWindow() {
   const { screen } = require('electron');
   const display = screen.getPrimaryDisplay();
 
-  mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({ 
     x: display.bounds.x,
     y: display.bounds.y,
     fullscreen: true,
