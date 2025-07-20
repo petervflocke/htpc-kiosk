@@ -112,8 +112,26 @@ app.whenReady().then(async () => {
   // console.log('Cookies and web data are saved in:', app.getPath('userData'));
 
   // IPC handler: launch Microsoft Edge in kiosk mode for a given URL
-  ipcMain.on('open-link-in-kiosk', (event, url) => {
+  ipcMain.on('open-link-in-kiosk', async (event, url, vpnRequired) => {
     console.log(`IPC message received: open-link-in-kiosk for URL: ${url}`);
+
+    // If a VPN state is required, verify it before opening the link
+    if (vpnRequired === 'on' || vpnRequired === 'off') {
+      const current = await getVPNStatus();
+      console.log(`VPN requirement: ${vpnRequired}, current status: ${current}`);
+      if (current !== vpnRequired) {
+        const result = await showCustomDialog({
+          title: 'VPN Check',
+          message: `VPN is ${current.toUpperCase()} but this link requires VPN ${vpnRequired.toUpperCase()}. Continue?`,
+          okText: 'OK',
+          cancelText: 'Cancel'
+        });
+        if (result !== 'ok') {
+          console.log('User cancelled link due to VPN mismatch.');
+          return;
+        }
+      }
+    }
     const edgePath = '"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe"';
     const args = `--edge-kiosk-type=fullscreen --new-window --start-fullscreen --app "${url}" --no-first-run`;
     const command = `${edgePath} ${args}`;

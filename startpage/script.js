@@ -42,7 +42,7 @@ window.addEventListener('DOMContentLoaded', async () => {
               e.preventDefault();
               console.log(`Link item clicked: ${item.label}, action: ${item.action}. Attempting to open in external kiosk mode.`);
               if (window.electronAPI && typeof window.electronAPI.openLinkInKiosk === 'function') {
-                window.electronAPI.openLinkInKiosk(item.action);
+                window.electronAPI.openLinkInKiosk(item.action, item.vpn);
               } else {
                 console.error('electronAPI.openLinkInKiosk is not available. Check preload.js and contextIsolation settings.');
               }

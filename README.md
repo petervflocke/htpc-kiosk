@@ -97,6 +97,8 @@ Each entry in the JSON array is an object with four properties:
 -   `label`: The text label displayed below the icon.
 -   `type`: Determines the button's behavior. Can be either `"link"` or `"command"`.
 -   `action`: The target for the action. Its meaning depends on the `type`.
+-   `vpn` (optional, link only): Set to `"on"` or `"off"` to require a specific VPN
+    state before opening the link.
 
 #### Type: `link`
 
@@ -108,9 +110,12 @@ A `link` type opens the specified URL in a new, fullscreen Microsoft Edge kiosk 
   "icon": "netflix2.png",
   "label": "Netflix",
   "type": "link",
-  "action": "https://www.netflix.com/"
+  "action": "https://www.netflix.com/",
+  "vpn": "on"
 }
 ```
+If the current VPN status doesn't match the value specified in `vpn`, the user
+is asked to confirm before the link is opened.
 
 #### Type: `command`
 
