@@ -155,7 +155,14 @@ app.whenReady().then(async () => {
 
     // If a VPN state is required, verify it before opening the link
     if (vpnRequired === 'on' || vpnRequired === 'off') {
-      const current = await getVPNStatus();
+    // Show indicator before  showing the confirmation dialog
+    mainWindow.webContents.send('set-activity-indicator', { visible: true, text: 'Checking VPN...' });
+    // Detect current status
+    const current = await getVPNStatus();
+    // Hide indicator before  showing the confirmation dialog
+    mainWindow.webContents.send('set-activity-indicator', { visible: false });
+      
+      
       console.log(`VPN requirement: ${vpnRequired}, current status: ${current}`);
       if (current !== vpnRequired) {
         const result = await showCustomDialog({
