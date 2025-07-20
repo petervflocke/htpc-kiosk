@@ -3,7 +3,7 @@
   { "icon": "hbo-max.png", "label": "", "type": "link", "action": "https://www.hbomax.com/pl/pl", "vpn": "on" },
   { "icon": "plus1.png", "label": "", "type": "link", "action": "https://canalplus.com/pl/?refreshRights=true", "vpn": "on" },
   { "icon": "player31.png", "label": "", "type": "link", "action": "https://player.pl", "vpn": "on" },
-  { "icon": "amazon1.png", "label": "", "type": "link", "action": "https://www.amazon.pl/gp/browse.html?node=98208905031&ref_=nav_cs_PLdisco", "vpn": "on" },
+  { "icon": "amazon1.png", "label": "", "type": "link", "action": "https://www.amazon.de/gp/video/storefront/?pvp=%2Fref%3Ddvm_crs_nav_de_xs_s_d_disc_eg_al%3Fref_%3Dnav_signin" },
   { "icon": "kodi21.png", "label": "", "type": "command", "action": "kodi" },
   { "icon": "", "label": "", "type": "link", "action": "" },
   { "icon": "", "label": "", "type": "link", "action": "" },
