@@ -27,6 +27,44 @@ function getResourcePath(relativePath) {
 const psshutdownPath = getResourcePath('tools/psshutdown.exe');
 // Path to the matrix configuration JSON
 const matrixConfigPath = getResourcePath('config/matrix.json');
+// Matrix dimensions used by the frontend (startpage/script.js)
+const MATRIX_COLS = 6;
+const MATRIX_ROWS = 4;
+const MATRIX_SIZE = MATRIX_COLS * MATRIX_ROWS;
+
+function validateMatrixConfig(data) {
+  if (!Array.isArray(data)) {
+    console.error('matrix.json is not an array');
+    return Array.from({ length: MATRIX_SIZE }, () => ({ icon: '', label: '', type: 'link', action: '' }));
+  }
+
+  if (data.length !== MATRIX_SIZE) {
+    console.error(`matrix.json must contain exactly ${MATRIX_SIZE} entries (got ${data.length})`);
+  }
+
+  const sanitized = [];
+  for (let i = 0; i < MATRIX_SIZE; i++) {
+    const item = data[i];
+    if (
+      item &&
+      typeof item === 'object' &&
+      typeof item.icon === 'string' &&
+      typeof item.label === 'string' &&
+      typeof item.type === 'string' &&
+      typeof item.action === 'string' &&
+      ['link', 'command'].includes(item.type) &&
+      (item.vpn === undefined || item.vpn === 'on' || item.vpn === 'off')
+    ) {
+      sanitized.push(item);
+    } else {
+      if (item !== undefined) {
+        console.error(`Invalid entry in matrix.json at index ${i}`);
+      }
+      sanitized.push({ icon: '', label: '', type: 'link', action: '' });
+    }
+  }
+  return sanitized;
+}
 
 // Set the userData path to "user_data" folder in the application directory
 // PP fix the userData location: const appFolderPath = path.join(__dirname, 'user_data');
@@ -584,10 +622,11 @@ ipcMain.handle('set-network-config', async (event, config) => {
 ipcMain.handle('load-matrix-config', async () => {
   try {
     const raw = fs.readFileSync(matrixConfigPath, 'utf8');
-    return JSON.parse(raw);
+    const data = JSON.parse(raw);
+    return validateMatrixConfig(data);
   } catch (err) {
     console.error('Failed to load matrix config:', err);
-    return [];
+    return validateMatrixConfig([]);
   }
 });
 

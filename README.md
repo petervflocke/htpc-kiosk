@@ -100,6 +100,11 @@ Each entry in the JSON array is an object with four properties:
 -   `vpn` (optional, link only): Set to `"on"` or `"off"` to require a specific VPN
     state before opening the link.
 
+The grid layout is fixed at 6 columns by 4 rows (24 cells). The `matrix.json`
+file must therefore contain exactly 24 entries. Any entry that is missing
+required fields is replaced with an empty placeholder when the application
+loads.
+
 #### Type: `link`
 
 A `link` type opens the specified URL in a new, fullscreen Microsoft Edge kiosk window. This is ideal for web-based streaming services.
