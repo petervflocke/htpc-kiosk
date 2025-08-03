@@ -51,6 +51,7 @@
   </div>
   <script>
     window.dialogAPI.onDialogOptions((opts) => {
+      const dlgId = opts.id;
       document.getElementById('dialog-title').textContent = opts.title || '';
       document.getElementById('dialog-message').textContent = opts.message || '';
 
@@ -62,7 +63,7 @@
         const okBtn = document.createElement('button');
         okBtn.id = 'ok-btn';
         okBtn.textContent = opts.okText;
-        okBtn.onclick = () => window.dialogAPI.sendResponse('ok');
+        okBtn.onclick = () => window.dialogAPI.sendResponse(dlgId, 'ok');
         btns.appendChild(okBtn);
         okBtn.focus();
       }
@@ -71,13 +72,13 @@
         const okBtn = document.createElement('button');
         okBtn.id = 'ok-btn';
         okBtn.textContent = opts.okText;
-        okBtn.onclick = () => window.dialogAPI.sendResponse('ok');
+        okBtn.onclick = () => window.dialogAPI.sendResponse(dlgId, 'ok');
         btns.appendChild(okBtn);
 
         const cancelBtn = document.createElement('button');
         cancelBtn.id = 'cancel-btn';
         cancelBtn.textContent = opts.cancelText;
-        cancelBtn.onclick = () => window.dialogAPI.sendResponse('cancel');
+        cancelBtn.onclick = () => window.dialogAPI.sendResponse(dlgId, 'cancel');
         btns.appendChild(cancelBtn);
 
         okBtn.focus();

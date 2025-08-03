@@ -220,7 +220,7 @@ async function getCurrentGateway() {
 // Helper: Determine VPN status
 async function getVPNStatus() {
   const gw = await getCurrentGateway();
-  console.log('Detected gateway:', gw); // <-- Add this line
+  console.log('Detected gateway:', gw);
   if (gw === '192.168.8.1') return 'on';
   if (gw === '192.168.0.1') return 'off';
   return 'unknown';
@@ -422,6 +422,7 @@ app.on('window-all-closed', () => {
 
 async function showCustomDialog(options) {
   return new Promise((resolve) => {
+    const dialogId = `dialog-${Date.now()}-${Math.random()}`;
     const modal = new BrowserWindow({
       parent: mainWindow,
       modal: true,
@@ -434,8 +435,8 @@ async function showCustomDialog(options) {
       frame: false,
       alwaysOnTop: true,
       resizable: true,
-      transparent: true, // <-- add this
-      backgroundColor: '#00000000', // <-- add this
+      transparent: true,
+      backgroundColor: '#00000000',
       webPreferences: {
         preload: path.join(__dirname, 'dialog-preload.js'),
         contextIsolation: true,
@@ -444,9 +445,9 @@ async function showCustomDialog(options) {
     });
     modal.loadFile(path.join(__dirname, 'startpage', 'dialog.html'));
     modal.webContents.once('did-finish-load', () => {
-      modal.webContents.send('dialog-options', options);
+      modal.webContents.send('dialog-options', { ...options, id: dialogId });
     });
-    ipcMain.once('dialog-response', (event, response) => {
+    ipcMain.once(`dialog-response-${dialogId}`, (event, response) => {
       resolve(response);
       modal.close();
     });
