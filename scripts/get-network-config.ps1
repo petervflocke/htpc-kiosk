@@ -21,6 +21,13 @@ try {
     # Get the full IP address object to find the prefix length
     $ipAddressInfo = Get-NetIPAddress -InterfaceIndex $ipconfig.InterfaceIndex -AddressFamily IPv4 | Select-Object -First 1
 
+    # Get MTU for the interface (NlMtu is the MTU value)
+    $ipInterface = Get-NetIPInterface -InterfaceIndex $ipconfig.InterfaceIndex -AddressFamily IPv4 | Select-Object -First 1
+    $mtu = $null
+    if ($null -ne $ipInterface -and ($ipInterface | Get-Member -Name NlMtu)) {
+        $mtu = $ipInterface.NlMtu
+    }
+
     # Get DNS server addresses
     $dnsServers = (Get-DnsClientServerAddress -InterfaceIndex $ipconfig.InterfaceIndex -AddressFamily IPv4).ServerAddresses
 
@@ -39,7 +46,8 @@ try {
         prefixLength = $ipAddressInfo.PrefixLength;
         gateway = $ipconfig.IPv4DefaultGateway.NextHop;
         dns = if ($null -ne $dnsServers) { $dnsServers -join ',' } else { "" };
-        adapterType = $adapterType
+        adapterType = $adapterType;
+        mtu = if ($null -ne $mtu) { $mtu } else { $null }
     }
 
     # Convert to JSON and write to standard output
