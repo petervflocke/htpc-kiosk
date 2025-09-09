@@ -3,7 +3,8 @@ param (
     [Parameter(Mandatory = $true)][string]$IPAddress,
     [Parameter(Mandatory = $true)][int]$PrefixLength,
     [Parameter(Mandatory = $true)][string]$Gateway,
-    [Parameter(Mandatory = $true)][string]$DNS
+    [Parameter(Mandatory = $true)][string]$DNS,
+    [int]$MTU = 1420 # Add MTU parameter with default value 1420
 )
 
 function Log($msg) {
@@ -11,7 +12,7 @@ function Log($msg) {
 }
 
 Log "Applying network settings to interface '$InterfaceAlias'..."
-Log "-> IP: $IPAddress/$PrefixLength, Gateway: $Gateway, DNS: $DNS"
+Log "-> IP: $IPAddress/$PrefixLength, Gateway: $Gateway, DNS: $DNS, MTU: $MTU"
 
 try {
     $iface = Get-NetAdapter -Name $InterfaceAlias
@@ -27,6 +28,10 @@ try {
     # Set new IP Address and Gateway
     Log "Setting new IP address and gateway..."
     New-NetIPAddress -InterfaceAlias $InterfaceAlias -IPAddress $IPAddress -PrefixLength $PrefixLength -DefaultGateway $Gateway
+
+    # Set MTU
+    Log "Setting MTU to $MTU..."
+    Set-NetIPInterface -InterfaceAlias $InterfaceAlias -NlMtu $MTU
 
     # Set DNS Servers
     Log "Setting new DNS server addresses..."

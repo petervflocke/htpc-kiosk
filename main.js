@@ -235,14 +235,16 @@ function toggleVPN(targetMode, callback) {
       prefixLength: 24,
       gateway: "192.168.8.1",
       dns: "8.8.8.8",
-      interfaceAlias: "Ethernet" // This could be made dynamic
+      interfaceAlias: "Ethernet", // This could be made dynamic
+      mtu: 1420                   // <-- Add MTU here
     },
     off: {
       ipAddress: "192.168.0.6",
       prefixLength: 24,
       gateway: "192.168.0.1",
       dns: "8.8.8.8",
-      interfaceAlias: "Ethernet"
+      interfaceAlias: "Ethernet",
+      mtu: 1420                   // <-- And here
     }
   };
 
@@ -256,7 +258,7 @@ function toggleVPN(targetMode, callback) {
 
   // Use the generic set-network-config.ps1 script
   const scriptPath = getResourcePath('scripts/set-network-config.ps1');
-  const command = `powershell.exe -ExecutionPolicy Bypass -File "${scriptPath}" -InterfaceAlias "${config.interfaceAlias}" -IPAddress "${config.ipAddress}" -PrefixLength ${config.prefixLength} -Gateway "${config.gateway}" -DNS "${config.dns}"`;
+  const command = `powershell.exe -ExecutionPolicy Bypass -File "${scriptPath}" -InterfaceAlias "${config.interfaceAlias}" -IPAddress "${config.ipAddress}" -PrefixLength ${config.prefixLength} -Gateway "${config.gateway}" -DNS "${config.dns}" -MTU ${config.mtu}`;
 
   sudo.exec(command, { name: 'HTPC VPN Switcher' }, (err, stdout, stderr) => {
     if (err || stderr) {
