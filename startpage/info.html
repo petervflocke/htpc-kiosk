@@ -64,6 +64,7 @@
     window.infoAPI.getSystemDetails().then(details => {
       const infoText = [
         `IP Address:      ${details.ip}`,
+        `MTU:             ${details.mtu}`,
         `Gateway:         ${details.gateway}`,
         `DNS:             ${details.dns}`,
         `Connection Type: ${details.adapterType}`,
