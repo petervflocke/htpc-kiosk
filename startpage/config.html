@@ -108,6 +108,10 @@
         <input type="text" id="prefixLength" placeholder="e.g., 24" disabled>
       </div>
       <div class="form-row">
+        <label for="mtu">MTU:</label>
+        <input type="text" id="mtu" placeholder="e.g., 1420" disabled>
+      </div>
+      <div class="form-row">
         <label for="gateway">Gateway:</label>
         <input type="text" id="gateway" placeholder="e.g., 192.168.1.1" disabled>
       </div>
@@ -128,6 +132,7 @@
     const ipAddressEl = document.getElementById('ipAddress');
     const prefixLengthEl = document.getElementById('prefixLength');
     const gatewayEl = document.getElementById('gateway');
+    const mtuEl = document.getElementById('mtu');
     const dnsEl = document.getElementById('dns');
     const interfaceAliasEl = document.getElementById('interfaceAlias');
     const statusMessageEl = document.getElementById('status-message');
@@ -135,7 +140,7 @@
     const submitBtn = document.getElementById('submit-btn');
     const defaultBtn = document.getElementById('default-btn');
     const closeBtn = document.getElementById('close-btn');
-    const formElements = [ipAddressEl, prefixLengthEl, gatewayEl, dnsEl, submitBtn, defaultBtn];
+    const formElements = [ipAddressEl, prefixLengthEl, mtuEl, gatewayEl, dnsEl, submitBtn, defaultBtn];
 
     function setStatus(message, isError = false) {
       statusMessageEl.textContent = message;
@@ -156,6 +161,7 @@
         ipAddressEl.value = config.ipAddress || '';
         prefixLengthEl.value = config.prefixLength || '';
         gatewayEl.value = config.gateway || '';
+        mtuEl.value = (config.mtu !== undefined && config.mtu !== null) ? String(config.mtu) : '';
         dnsEl.value = config.dns || '';
         interfaceAliasEl.value = config.interfaceAlias || '';
         setStatus('Current settings loaded.');
@@ -176,6 +182,7 @@
         interfaceAlias: interfaceAliasEl.value,
         ipAddress: ipAddressEl.value,
         prefixLength: prefixLengthEl.value,
+        mtu: mtuEl.value,
         gateway: gatewayEl.value,
         dns: dnsEl.value,
       };
@@ -201,6 +208,7 @@
       ipAddressEl.value = '192.168.8.6';
       prefixLengthEl.value = '24';
       gatewayEl.value = '192.168.8.1';
+      mtuEl.value = '1420';
       dnsEl.value = '8.8.8.8';
       setStatus('Default settings loaded. Click Apply to save.');
     });

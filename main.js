@@ -556,8 +556,8 @@ function showConfigDialog() {
   }
 
   configWindow = new BrowserWindow({
-    width: 850,
-    height: 600,
+    width: 900,
+    height: 640,
     modal: true,
     parent: mainWindow,
     frame: false,
@@ -611,7 +611,8 @@ ipcMain.handle('get-network-config', async () => {
 // IPC handler to set network configuration with admin rights
 ipcMain.handle('set-network-config', async (event, config) => {
   const scriptPath = getResourcePath('scripts/set-network-config.ps1');
-  const command = `powershell.exe -ExecutionPolicy Bypass -File "${scriptPath}" -InterfaceAlias "${config.interfaceAlias}" -IPAddress "${config.ipAddress}" -PrefixLength ${config.prefixLength} -Gateway "${config.gateway}" -DNS "${config.dns}"`;
+  const mtuParam = config.mtu && String(config.mtu).trim() !== '' ? ` -MTU ${config.mtu}` : '';
+  const command = `powershell.exe -ExecutionPolicy Bypass -File "${scriptPath}" -InterfaceAlias "${config.interfaceAlias}" -IPAddress "${config.ipAddress}" -PrefixLength ${config.prefixLength} -Gateway "${config.gateway}" -DNS "${config.dns}"${mtuParam}`;
 
   const sudoOptions = {
     name: 'HTPC Kiosk Network Setup',
