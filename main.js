@@ -530,6 +530,7 @@ ipcMain.handle('get-system-details', async () => {
   // 5. Construct and return the final JSON object
   return {
     ip: networkInfo.ipAddress || 'N/A',
+    mtu: networkInfo.mtu || 'N/A',
     gateway: networkInfo.gateway || 'N/A',
     dns: networkInfo.dns || 'N/A',
     adapterType: networkInfo.adapterType || 'N/A',

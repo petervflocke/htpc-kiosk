@@ -138,6 +138,7 @@ function fetchSystemInfo() {
       <b>Memory:</b> ${details.memUsed} / ${details.memTotal} MB<br>
       <b>Disk:</b> ${details.diskUsed} / ${details.diskTotal} GB<br>
       <b>IP:</b> ${details.ip}<br>
+      <b>MTU:</b> ${details.mtu}<br>
       <b>Gateway:</b> ${details.gateway}
       `;
   }).catch(() => {
